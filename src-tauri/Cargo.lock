@@ -1859,7 +1859,7 @@ dependencies = [
 
 [[package]]
 name = "kimi-desktop-linux"
-version = "0.1.4"
+version = "0.1.4-1"
 dependencies = [
  "serde",
  "serde_json",
