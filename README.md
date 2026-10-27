@@ -32,8 +32,21 @@ Noad Laboratories is an independent entity and is not affiliated with, endorsed 
 - Persistent window state (size/position remembered across sessions)
 - Single-instance enforcement (relaunching focuses the existing window)
 - External links open in the system browser
+- Sign in with Google works inside the app (in-app popup that closes itself when login completes)
+- SSO / "open in browser" requests from the Kimi site are handled natively
 - `.deb` and AppImage bundles
 - Minimal codebase, no framework bloat
+
+---
+
+## Signing in
+
+Phone number, Google and SSO logins are supported.
+
+- **Google:** the Google sign-in opens in a small in-app popup (500x640). WebKitGTK ignores `window.open()` by default, so the app handles popup requests itself and keeps the popup connected to the main window so the login result gets back to Kimi. When the popup returns to Kimi it closes automatically and the main window reloads to pick up your session.
+- **SSO and external links:** the Kimi site calls a native `open_external` command, which opens the link in your default browser. Only `http`, `https` and `mailto` links are allowed. Links to unrelated sites also open in the system browser.
+- **Separate browser profile:** the app is its own browser with its own cookies, so Google and Kimi list it as a separate device in account security, and Google may show a one-time "new sign-in" notice. Your session is stored locally and persists between launches.
+- **Reset the session:** delete `~/.local/share/cn.moonshot.kimi.desktop` to clear cookies and local data.
 
 ---
 
@@ -116,17 +129,27 @@ kimi-desktop-linux/
 │   └── index.html              # Splash loader shown while Kimi loads
 ├── src-tauri/
 │   ├── Cargo.toml              # Rust dependencies
-│   ├── tauri.conf.json         # App & window configuration
-│   ├── build.rs                # Build script
+│   ├── tauri.conf.json         # App & window configuration (main window is created in code)
+│   ├── build.rs                # Build script, registers the `open_external` command
 │   ├── capabilities/
-│   │   └── default.json        # Runtime permission manifest
+│   │   └── default.json        # Runtime permissions, including the remote kimi.ai / kimi.com origins
 │   ├── icons/                  # Noad Labs branding assets
 │   └── src/
 │       ├── main.rs             # Entry point
-│       └── lib.rs              # App bootstrap
+│       └── lib.rs              # App bootstrap, popup handling, `open_external` command
 ├── build.sh                    # One-command build script
 └── README.md
 ```
+
+---
+
+## Development
+
+```bash
+cargo tauri dev
+```
+
+The first build compiles several hundred crates and can take a while; later builds are incremental. Debug builds open the web inspector automatically, and the terminal prints `[kimi-desktop-linux]` log lines for popup requests and page loads, which is useful when debugging login flows.
 
 ---
 
